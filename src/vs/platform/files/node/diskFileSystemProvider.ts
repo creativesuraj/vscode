@@ -10,7 +10,7 @@ import { FileSystemProviderCapabilities, IFileChange, IWatchOptions, IStat, File
 import { URI } from 'vs/base/common/uri';
 import { Event, Emitter } from 'vs/base/common/event';
 import { isLinux, isWindows } from 'vs/base/common/platform';
-import { statLink, unlink, move, copy, readFile, truncate, rimraf, RimRafMode, exists, readdirWithFileTypes } from 'vs/base/node/pfs';
+import { statLink, unlink, move, copy, readFile, rimraf, RimRafMode, exists, readdirWithFileTypes } from 'vs/base/node/pfs';
 import { normalize, basename, dirname } from 'vs/base/common/path';
 import { joinPath } from 'vs/base/common/resources';
 import { isEqual } from 'vs/base/common/extpath';
@@ -190,21 +190,6 @@ export class DiskFileSystemProvider extends Disposable implements
 
 			let flags: string | undefined = undefined;
 			if (opts.create) {
-				if (isWindows && await exists(filePath)) {
-					try {
-						// On Windows and if the file exists, we use a different strategy of saving the file
-						// by first truncating the file and then writing with r+ flag. This helps to save hidden files on Windows
-						// (see https://github.com/Microsoft/vscode/issues/931) and prevent removing alternate data streams
-						// (see https://github.com/Microsoft/vscode/issues/6363)
-						await truncate(filePath, 0);
-
-						// After a successful truncate() the flag can be set to 'r+' which will not truncate.
-						flags = 'r+';
-					} catch (error) {
-						this.logService.trace(error);
-					}
-				}
-
 				// we take opts.create as a hint that the file is opened for writing
 				// as such we use 'w' to truncate an existing or create the
 				// file otherwise. we do not allow reading.
